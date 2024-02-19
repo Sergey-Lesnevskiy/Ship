@@ -1,7 +1,7 @@
 {
-  "name": "ws_task",
+  "name": "ws",
   "version": "1.0.0",
-  "description": "Template for the WebSocket remote control task",
+  "description": "WebSocket task",
   "main": "index.js",
   "type": "module",
   "scripts": {
