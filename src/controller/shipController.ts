@@ -1,23 +1,28 @@
 import WebSocket from 'ws';
-import { IAddShips, IInstruction, IGame } from '../interface/interface.js';
+import { IAddShips, IInstruction, IGame, IShip, IShipLength, ShipPosition } from '../interface/interface.js';
 import { gamesList } from '../data/roomData.js';
 import { stringifyResponse } from '../utils/utils.js';
 import { userList } from '../data/userData.js';
+import { sendTurnResponse } from './gameCotroller.js';
 
 export function addShipsToGameBoard(ws: WebSocket, command: IInstruction<IAddShips>) {
   const { gameId, ships, indexPlayer } = command.data;
 
+  const userShipsCoordinatesList = ships.map((ship) => convertShipToCoordinates(ship));
+  console.log(userShipsCoordinatesList);
   const currentGame = gamesList[gameId];
   const currentPlayer = currentGame.roomUsers.find((user) => user.ws === ws);
   if (currentPlayer) {
     currentPlayer.indexPlayer = indexPlayer;
     currentPlayer.shipsList = ships;
+    currentPlayer.shipsCoords = userShipsCoordinatesList;
   }
   if (bothPlayersReady(currentGame)) {
     currentGame.roomUsers.forEach((player, index) => {
       const playerWs = userList[player.index - 1].ws;
       if (playerWs) {
         sendCreateGameResponse(playerWs, currentGame, index);
+        sendTurnResponse(playerWs, currentGame, index, 'start');
       }
     });
   }
@@ -43,4 +48,32 @@ export function createStartGameResponse(currentGame: IGame, index: number): stri
 function sendCreateGameResponse(ws: WebSocket, currentGame: IGame, index: number): void {
   const createGameResponse = createStartGameResponse(currentGame, index);
   ws.send(createGameResponse);
+}
+function convertShipToCoordinates(ship: IShip): Array<ShipPosition> {
+  const shipCoordinates = [];
+
+  const shipLength: IShipLength = {
+    huge: 4,
+    large: 3,
+    medium: 2,
+    small: 1,
+  };
+
+  for (let i = 0; i < shipLength[ship.type]; i++) {
+    if (ship.direction) {
+      const coordinates = {
+        x: ship.position.x,
+        y: ship.position.y + i,
+      };
+      shipCoordinates.push(coordinates);
+    } else {
+      const coordinates = {
+        x: ship.position.x + i,
+        y: ship.position.y,
+      };
+      shipCoordinates.push(coordinates);
+    }
+  }
+
+  return shipCoordinates;
 }

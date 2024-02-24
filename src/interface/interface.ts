@@ -16,23 +16,25 @@ export interface IRegUser {
 
 export interface IRoom {
   roomId: number;
-  roomUsers: Array<TRoomUser>;
+  roomUsers: Array<IRoomUser>;
 }
 
-type TRoomUser = {
+interface IRoomUser {
   ws?: WebSocket;
   name: string;
   index: number;
   shipsList?: Array<IShip>;
   indexPlayer?: number;
-};
+  shipsCoords?: Array<ShipPosition[]>;
+}
 
 export interface UserAddToRoom {
   indexRoom: number;
 }
 export interface IGame {
   gameId?: number;
-  roomUsers: Array<TRoomUser>;
+  roomUsers: Array<IRoomUser>;
+  whoseTurnIndex?: number;
 }
 export interface IAddShips {
   gameId: number;
@@ -40,14 +42,17 @@ export interface IAddShips {
   indexPlayer: number;
 }
 
-interface IShip {
+export interface IShip {
   position: ShipPosition;
   direction: boolean;
   length: number;
   type: 'small' | 'medium' | 'large' | 'huge';
 }
 
-interface ShipPosition {
+export interface ShipPosition {
   x: number;
   y: number;
+}
+export interface IShipLength {
+  [key: string]: number;
 }
