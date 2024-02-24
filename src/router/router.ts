@@ -1,12 +1,19 @@
-import { IInstruction } from '../interface/interface.js';
-export const router = (data: IInstruction) => {
+import { WebSocket } from 'ws';
+import { IInstruction, IRegUser } from '../interface/interface.js';
+import { sendRegResponse } from '../controller/controller.js';
+import { createNewRoom, sendUpdateRoomState } from '../controller/roomController.js';
+
+export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
   console.log('Data in router', data);
 
   switch (data.type) {
     case 'reg':
-      console.log('send reg response');
+      sendRegResponse(ws, data as IInstruction<IRegUser>);
+      sendUpdateRoomState(ws);
+      console.log('reg room');
       break;
     case 'create_room':
+      createNewRoom(ws);
       console.log('create room');
       break;
     case 'add_user_to_room':

@@ -2,10 +2,10 @@
   "name": "ws",
   "version": "1.0.0",
   "description": "WebSocket task",
-  "main": "index.js",
+  "main": "ws_server.ts",
   "type": "module",
   "scripts": {
-    "start": "node ./src/ws_server/ws_server.ts",
+    "start": "ts-node ./src/ws_server/ws_server.ts",
     "start:dev": "nodemon ./src/ws_server/ws_server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

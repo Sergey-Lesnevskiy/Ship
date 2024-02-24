@@ -15,13 +15,13 @@ const WSServer: WebSocket.Server<typeof WebSocket, typeof IncomingMessage> = new
 WSServer.on('connection', onConnect);
 WSServer.on('close', onClose);
 
-function onConnect(ws: WebSocket.Server<typeof WebSocket, typeof IncomingMessage>): void {
+export function onConnect(ws: WebSocket): void {
   ws.on('error', console.error);
 
   console.log(`WS works on ${WS_PORT}`);
 
   ws.on('message', function message(command) {
-    router(parsedCommand(command));
+    router(ws, parsedCommand(command));
   });
 }
 
