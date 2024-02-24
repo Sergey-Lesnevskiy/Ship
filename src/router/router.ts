@@ -1,7 +1,13 @@
 import { WebSocket } from 'ws';
-import { IInstruction, IRegUser, UserAddToRoom } from '../interface/interface.js';
+import { IAddShips, IInstruction, IRegUser, UserAddToRoom } from '../interface/interface.js';
 import { sendRegResponse } from '../controller/controller.js';
-import { addUserToRoom, createNewRoom, sendUpdateRoomState } from '../controller/roomController.js';
+import {
+  addUserToRoom,
+  createNewRoom,
+  sendUpdateRoomState,
+  sendUpdateRoomStateToAll,
+} from '../controller/roomController.js';
+import { addShipsToGameBoard } from '../controller/shipController.js';
 
 export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
   console.log('Data in router', data);
@@ -9,7 +15,7 @@ export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
   switch (data.type) {
     case 'reg':
       sendRegResponse(ws, data as IInstruction<IRegUser>);
-      sendUpdateRoomState(ws);
+      sendUpdateRoomStateToAll();
       console.log('reg room');
       break;
     case 'create_room':
@@ -23,9 +29,6 @@ export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
     case 'create_game':
       console.log('create game for players');
       break;
-    case 'start_game':
-      console.log('start game');
-      break;
     case 'attack':
       console.log('attack');
       break;
@@ -36,6 +39,7 @@ export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
       console.log('update room state for one player');
       break;
     case 'add_ships':
+      addShipsToGameBoard(ws, data as IInstruction<IAddShips>);
       console.log('add ships');
       break;
     case 'update_winners':

@@ -20,8 +20,11 @@ export interface IRoom {
 }
 
 type TRoomUser = {
+  ws?: WebSocket;
   name: string;
   index: number;
+  shipsList?: Array<IShip>;
+  indexPlayer?: number;
 };
 
 export interface UserAddToRoom {
@@ -30,4 +33,21 @@ export interface UserAddToRoom {
 export interface IGame {
   gameId?: number;
   roomUsers: Array<TRoomUser>;
+}
+export interface IAddShips {
+  gameId: number;
+  ships: Array<IShip>;
+  indexPlayer: number;
+}
+
+interface IShip {
+  position: ShipPosition;
+  direction: boolean;
+  length: number;
+  type: 'small' | 'medium' | 'large' | 'huge';
+}
+
+interface ShipPosition {
+  x: number;
+  y: number;
 }
