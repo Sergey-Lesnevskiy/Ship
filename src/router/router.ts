@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
-import { IInstruction, IRegUser } from '../interface/interface.js';
+import { IInstruction, IRegUser, UserAddToRoom } from '../interface/interface.js';
 import { sendRegResponse } from '../controller/controller.js';
-import { createNewRoom, sendUpdateRoomState } from '../controller/roomController.js';
+import { addUserToRoom, createNewRoom, sendUpdateRoomState } from '../controller/roomController.js';
 
 export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
   console.log('Data in router', data);
@@ -17,6 +17,7 @@ export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
       console.log('create room');
       break;
     case 'add_user_to_room':
+      addUserToRoom(ws, data as IInstruction<UserAddToRoom>);
       console.log('add user to room');
       break;
     case 'create_game':

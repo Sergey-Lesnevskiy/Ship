@@ -1,18 +1,5 @@
 import { WebSocket } from 'ws';
 
-// export interface IRegUser {
-//   id?: string;
-//   name: string;
-//   password: string;
-//   error?: boolean;
-//   errorText?: string;
-// }
-
-// export interface IInstruction {
-//   type: string;
-//   data: IRegUser;
-//   id: number;
-// }
 export interface IInstruction<T> {
   type: string;
   data: T;
@@ -20,7 +7,6 @@ export interface IInstruction<T> {
 }
 
 export interface IRegUser {
-  id?: string;
   ws?: WebSocket;
   name: string;
   password: string;
@@ -37,3 +23,11 @@ type TRoomUser = {
   name: string;
   index: number;
 };
+
+export interface UserAddToRoom {
+  indexRoom: number;
+}
+export interface IGame {
+  gameId?: number;
+  roomUsers: Array<TRoomUser>;
+}

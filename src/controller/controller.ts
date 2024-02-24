@@ -16,9 +16,22 @@ export function addUser(ws: WebSocket, userData: IRegUser): void {
     userList.push({ ...userData, ws });
     websocketList.add(ws);
     console.log(`user ${userData.name} added to DB`);
+  } else {
+    updateExistingUser(ws, userData);
   }
 }
 
+function updateExistingUser(ws: WebSocket, userData: IRegUser) {
+  const user = userList.find((user) => user.name === userData.name);
+  if (user) {
+    const userPreviousWs = user.ws;
+    if (userPreviousWs) {
+      websocketList.delete(userPreviousWs);
+      websocketList.add(ws);
+    }
+    user.ws = ws;
+  }
+}
 export function createRegResponse(command: IInstruction<IRegUser>): string {
   const regResponse = {
     type: command.type,
