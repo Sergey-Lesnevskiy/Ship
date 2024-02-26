@@ -19,7 +19,7 @@ export interface IRoom {
   roomUsers: Array<IRoomUser>;
 }
 
-interface IRoomUser {
+export interface IRoomUser {
   ws?: WebSocket;
   name: string;
   index: number;
@@ -35,7 +35,6 @@ export interface UserAddToRoom {
   indexRoom: number;
 }
 export interface IGame {
-  gameId?: number;
   roomUsers: Array<IRoomUser>;
   whoseTurnIndex?: number;
 }

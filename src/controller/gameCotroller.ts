@@ -1,8 +1,9 @@
 import WebSocket from 'ws';
 import { stringifyResponse } from '../utils/utils.js';
-import { IGame, IAttack, IInstruction, ShipPosition } from '../interface/interface.js';
-import { gamesList } from '../data/roomData.js';
+import { IGame, IAttack, IInstruction, ShipPosition, IRegUser, IRoomUser } from '../interface/interface.js';
+import { gamesList, winnersList } from '../data/roomData.js';
 import { userList } from '../data/userData.js';
+import { sendUpdateWinnersResponse, sendUpdateWinnersToAll } from './controller.js';
 
 export function handleAttack(command: IInstruction<IAttack>): void {
   const { gameId, indexPlayer } = command.data;
@@ -31,12 +32,17 @@ export function handleAttack(command: IInstruction<IAttack>): void {
       const playerWs = userList[player.index - 1].ws;
 
       if (playerWs) {
+        if (status === 'double-shot') {
+          return;
+        }
         sendTurnResponse(playerWs, turn);
         if (status === 'killed' && killedShip) {
           sendKillShipResponse(playerWs, killedShip, indexPlayer);
+          sendSurroundingCellsResponse(playerWs, killedShip, indexPlayer);
           const isGameFinished = currentGame.roomUsers[indexPlayer].isWinner;
           if (isGameFinished) {
             sendFinishResponse(playerWs, indexPlayer);
+            sendUpdateWinnersResponse(playerWs, winnersList);
           }
         }
         sendAttackResponse(playerWs, coordinates, indexPlayer, status);
@@ -159,19 +165,73 @@ function detectMissOrKill(
         status = 'killed';
         const killedShip = woundedCoords[shipIndex];
         currentGame.roomUsers[attackedBoardIndex].killedShips?.push(killedShip);
-        const opponentShipsLeft = currentGame.roomUsers[attackedBoardIndex].shipsCoords;
-        if (opponentShipsLeft) {
-          const isWinner = doesAttackerWin(opponentShipsLeft);
-          currentGame.roomUsers[indexPlayer].isWinner = isWinner;
-        }
+        handleWinners(currentGame, attackedBoardIndex, indexPlayer);
       }
     } else {
-      status = 'miss';
+      if (woundedCoords) {
+        for (let i = 0; i < woundedCoords?.length; i++) {
+          const doubleShotCoords = woundedCoords[i].find(
+            (coords) => coords.x === coordinates.x && coords.y === coordinates.y,
+          );
+          if (doubleShotCoords) {
+            status = 'double-shot';
+            break;
+          } else {
+            status = 'miss';
+          }
+        }
+      }
     }
   }
 
   return status;
 }
+
+export function handleTechnicalDefeat(user: IRegUser): void {
+  const foundGame = gamesList.find((game) => {
+    return game.roomUsers.some((roomUser) => roomUser.name === user.name);
+  });
+  if (foundGame) {
+    const foundGameIndex = gamesList.indexOf(foundGame);
+    const exitedPlayer = gamesList[foundGameIndex].roomUsers.find((roomUser) => roomUser.name === user.name);
+    let winnerPlayerIndex;
+
+    if (exitedPlayer) {
+      const playerIndex = gamesList[foundGameIndex].roomUsers.indexOf(exitedPlayer);
+      if (playerIndex) {
+        winnerPlayerIndex = 0;
+      } else {
+        winnerPlayerIndex = 1;
+      }
+      const losingPlayer = gamesList[foundGameIndex].roomUsers[playerIndex];
+      const winnerUser = gamesList[foundGameIndex].roomUsers[winnerPlayerIndex];
+      losingPlayer.isWinner = false;
+      winnerUser.isWinner = true;
+
+      const playerWs = winnerUser.ws;
+      if (playerWs) {
+        console.log('Game finished with technical defeat');
+        addWinner(winnerUser);
+        sendFinishResponse(playerWs, winnerPlayerIndex);
+        sendUpdateWinnersToAll();
+      }
+    }
+  }
+}
+
+function handleWinners(currentGame: IGame, attackedBoardIndex: number, indexPlayer: number): void {
+  const opponentShipsLeft = currentGame.roomUsers[attackedBoardIndex].shipsCoords;
+  if (opponentShipsLeft) {
+    const isWinner = doesAttackerWin(opponentShipsLeft);
+    currentGame.roomUsers[indexPlayer].isWinner = isWinner;
+
+    if (isWinner) {
+      const winnerUser = currentGame.roomUsers[indexPlayer];
+      addWinner(winnerUser);
+    }
+  }
+}
+
 function doesAttackerWin(opponentShips: Array<ShipPosition[]>): boolean {
   const allShipsKilled = opponentShips.every((ship) => ship.length === 0);
 
@@ -194,4 +254,55 @@ function generateRandomCoordinates(): ShipPosition {
   };
 
   return coordinates;
+}
+
+function addWinner(winnerUser: IRoomUser): void {
+  const winnerUserName = winnerUser.name;
+  const existingWinner = winnersList.find((winner) => winner.name === winnerUserName);
+
+  if (existingWinner) {
+    existingWinner.wins += 1;
+  } else {
+    const newWinner = {
+      name: winnerUserName,
+      wins: 1,
+    };
+    winnersList.push(newWinner);
+  }
+}
+export function generateSurroundingCells(killedShip: Array<ShipPosition>): Array<ShipPosition> {
+  const surroundingCells: Array<ShipPosition> = [];
+
+  killedShip.forEach((original) => {
+    for (let i = original.x - 1; i <= original.x + 1; i++) {
+      for (let k = original.y - 1; k <= original.y + 1; k++) {
+        const surroundingCoords: ShipPosition = {
+          x: i,
+          y: k,
+        };
+
+        const isKilledCoords = killedShip.find(
+          (coords) => coords.x === surroundingCoords.x && coords.y === surroundingCoords.y,
+        );
+        const isCellIncluded = surroundingCells.find(
+          (cell) => cell.x === surroundingCoords.x && cell.y === surroundingCoords.y,
+        );
+        const isNegativeValue = surroundingCoords.x < 0 || surroundingCoords.y < 0;
+        const isMoreThanTen = surroundingCoords.x > 9 || surroundingCoords.y > 9;
+
+        if (!isKilledCoords && !isCellIncluded && !isNegativeValue && !isMoreThanTen) {
+          surroundingCells.push(surroundingCoords);
+        }
+      }
+    }
+  });
+
+  return surroundingCells;
+}
+
+function sendSurroundingCellsResponse(playerWs: WebSocket, killedShip: Array<ShipPosition>, indexPlayer: number): void {
+  const surroundingCells = generateSurroundingCells(killedShip);
+  surroundingCells.forEach((coordinates) => {
+    sendAttackResponse(playerWs, coordinates, indexPlayer, 'miss');
+  });
 }

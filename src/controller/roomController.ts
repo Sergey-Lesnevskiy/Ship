@@ -33,12 +33,20 @@ export function addUserToRoom(ws: WebSocket, command: IInstruction<UserAddToRoom
         roomUsers: deletedRoom[0].roomUsers,
       };
       gamesList.push(game);
-
+      deleteRoomsCreatedByUser(user);
       sendUpdateRoomStateToAll();
     }
   }
 }
-
+export function deleteRoomsCreatedByUser(user: IRegUser): void {
+  const foundRoom = playRooms.find((room) => {
+    return room.roomUsers.some((roomUser) => roomUser.name === user.name);
+  });
+  if (foundRoom) {
+    const foundRoomIndex = playRooms.indexOf(foundRoom);
+    playRooms.splice(foundRoomIndex, 1);
+  }
+}
 export function createNewRoom(ws: WebSocket): void {
   const user = userList.find((user) => user.ws === ws);
   if (user && isFirstUserRoom(user)) {

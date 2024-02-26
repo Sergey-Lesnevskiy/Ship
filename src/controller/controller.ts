@@ -1,16 +1,33 @@
 import WebSocket from 'ws';
-import { IInstruction, IRegUser } from '../interface/interface.js';
+import { IInstruction, IRegUser, IWinner } from '../interface/interface.js';
 import { stringifyResponse } from '../utils/utils.js';
 import { isNewUser, isPasswordValid } from '../utils/validator.js';
 import { userList } from '../data/userData.js';
-import { websocketList } from '../data/roomData.js';
+import { websocketList, winnersList as winners } from '../data/roomData.js';
 
 export function sendRegResponse(ws: WebSocket, command: IInstruction<IRegUser>): void {
   const response = createRegResponse(command);
   addUser(ws, command.data);
   ws.send(response);
 }
+export function sendUpdateWinnersResponse(ws: WebSocket, winners: Array<IWinner>): void {
+  ws.send(createWinnersResponse(winners));
+}
 
+export function sendUpdateWinnersToAll(): void {
+  websocketList.forEach((wsClient) => {
+    sendUpdateWinnersResponse(wsClient, winners);
+  });
+}
+function createWinnersResponse(winners: Array<IWinner>) {
+  const winnersResponse = {
+    type: 'update_winners',
+    data: winners,
+    id: 0,
+  };
+
+  return stringifyResponse(winnersResponse);
+}
 export function addUser(ws: WebSocket, userData: IRegUser): void {
   if (isNewUser(userData.name)) {
     userList.push({ ...userData, ws });

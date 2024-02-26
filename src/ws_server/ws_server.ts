@@ -4,6 +4,8 @@ import WebSocket, { WebSocketServer } from 'ws';
 import { router } from '../router/router.js';
 import { parsedCommand } from '../utils/utils.js';
 import { userList } from '../data/userData.js';
+import { deleteRoomsCreatedByUser, sendUpdateRoomStateToAll } from '../controller/roomController.js';
+import { handleTechnicalDefeat } from '../controller/gameCotroller.js';
 
 const WS_PORT = 3000;
 
@@ -22,9 +24,15 @@ export function onConnect(ws: WebSocket, req: IncomingMessage): void {
   ws.on('close', function close() {
     const user = userList.find((user) => user.ws === ws);
     if (user) {
-      console.log(`User ${user.name} exited, WebSocket closed`);
+      deleteRoomsCreatedByUser(user);
+      sendUpdateRoomStateToAll();
+      handleTechnicalDefeat(user);
+      console.log(`User ${user.name} disconnected, WebSocket closed`);
     } else {
       console.log('Unauthorized user exited, WebSocket closed');
     }
   });
+}
+export function onClose(): void {
+  console.log('WebSocket Server closed');
 }

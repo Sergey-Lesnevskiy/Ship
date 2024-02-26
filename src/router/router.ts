@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws';
 import { IAddShips, IAttack, IInstruction, IRegUser, UserAddToRoom } from '../interface/interface.js';
-import { sendRegResponse } from '../controller/controller.js';
+import { sendRegResponse, sendUpdateWinnersToAll } from '../controller/controller.js';
 import {
   addUserToRoom,
   createNewRoom,
@@ -17,6 +17,7 @@ export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
     case 'reg':
       sendRegResponse(ws, data as IInstruction<IRegUser>);
       sendUpdateRoomStateToAll();
+      sendUpdateWinnersToAll();
       console.log('reg room');
       break;
     case 'create_room':
@@ -45,15 +46,15 @@ export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
       addShipsToGameBoard(ws, data as IInstruction<IAddShips>);
       console.log('add ships');
       break;
-    case 'update_winners':
-      console.log('update winners');
-      break;
+    // case 'update_winners':
+    //   console.log('update winners');
+    //   break;
     case 'turn':
       console.log("Info about player's turn");
       break;
-    case 'finish':
-      console.log('finish game');
-      break;
+    // case 'finish':
+    //   console.log('finish game');
+    //   break;
     default:
       console.log('Invalid input');
   }
