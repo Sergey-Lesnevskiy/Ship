@@ -4,7 +4,6 @@ import { IRegUser } from '../interface/interface.js';
 
 export const isNewUser = (name: string) => {
   const isFound = userList.find((item) => item.name === name);
-
   return isFound ? false : true;
 };
 

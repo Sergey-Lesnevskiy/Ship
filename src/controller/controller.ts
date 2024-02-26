@@ -6,9 +6,8 @@ import { userList } from '../data/userData.js';
 import { websocketList, winnersList as winners } from '../data/roomData.js';
 
 export function sendRegResponse(ws: WebSocket, command: IInstruction<IRegUser>): void {
-  const response = createRegResponse(command);
   addUser(ws, command.data);
-  ws.send(response);
+  ws.send(createRegResponse(command));
 }
 export function sendUpdateWinnersResponse(ws: WebSocket, winners: Array<IWinner>): void {
   ws.send(createWinnersResponse(winners));
@@ -60,7 +59,11 @@ export function createRegResponse(command: IInstruction<IRegUser>): string {
     data: {
       ...command.data,
       error: isNewUser(command.data.name) ? false : isPasswordValid(command.data) ? false : true,
-      errorText: isNewUser(command.data.name) ? '' : isPasswordValid(command.data) ? '' : 'Invalid password',
+      errorText: isNewUser(command.data.name)
+        ? ''
+        : isPasswordValid(command.data)
+        ? ''
+        : "Password for this username doesn't match",
     },
     id: command.id,
   };

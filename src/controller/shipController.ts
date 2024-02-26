@@ -3,14 +3,14 @@ import { IAddShips, IInstruction, IGame, IShip, IShipLength, ShipPosition } from
 import { gamesList } from '../data/roomData.js';
 import { stringifyResponse } from '../utils/utils.js';
 import { userList } from '../data/userData.js';
-import { generateTurn, sendTurnResponse } from './gameCotroller.js';
+import { generateTurn, sendTurnResponse } from './gameController.js';
 
 export function addShipsToGameBoard(ws: WebSocket, command: IInstruction<IAddShips>) {
   const { gameId, ships, indexPlayer } = command.data;
-
   const userShipsCoordinatesList = ships.map((ship) => convertShipToCoordinates(ship));
   const shipsAmount = userShipsCoordinatesList.length;
   const currentGame = gamesList.find((game) => game.gameId === gameId);
+
   if (currentGame) {
     const currentPlayer = currentGame.roomUsers.find((user) => user.ws === ws);
 
@@ -21,8 +21,10 @@ export function addShipsToGameBoard(ws: WebSocket, command: IInstruction<IAddShi
       currentPlayer.woundedCoords = Array.from({ length: shipsAmount }, () => []);
       currentPlayer.killedShips = [];
     }
+
     if (bothPlayersReady(currentGame)) {
       const turn = generateTurn(currentGame, 0, 'start');
+
       currentGame.roomUsers.forEach((player, index) => {
         const playerWs = userList[player.index - 1].ws;
         if (playerWs) {
@@ -30,12 +32,14 @@ export function addShipsToGameBoard(ws: WebSocket, command: IInstruction<IAddShi
           sendTurnResponse(playerWs, turn);
         }
       });
+
       console.log(`INFO: Both players have ships.\n`);
     } else {
       console.log(`INFO: One player has ships. Waiting for another player\n`);
     }
   }
 }
+
 function bothPlayersReady(currentGame: IGame): boolean {
   const haveShips = currentGame.roomUsers.every((player) => player.shipsList?.length);
 
@@ -55,8 +59,7 @@ export function createStartGameResponse(currentGame: IGame, index: number): stri
 }
 
 function sendCreateGameResponse(ws: WebSocket, currentGame: IGame, index: number): void {
-  const createGameResponse = createStartGameResponse(currentGame, index);
-  ws.send(createGameResponse);
+  ws.send(createStartGameResponse(currentGame, index));
 }
 function convertShipToCoordinates(ship: IShip): Array<ShipPosition> {
   const shipCoordinates = [];

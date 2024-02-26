@@ -3,7 +3,7 @@ import { stringifyResponse } from '../utils/utils.js';
 import { IGame, IAttack, IInstruction, ShipPosition, IRegUser, IRoomUser } from '../interface/interface.js';
 import { gamesList, winnersList } from '../data/roomData.js';
 import { userList } from '../data/userData.js';
-import { sendUpdateWinnersResponse, sendUpdateWinnersToAll } from './controller.js';
+import { sendUpdateWinnersToAll } from './controller.js';
 
 export function handleAttack(command: IInstruction<IAttack>): void {
   const { gameId, indexPlayer } = command.data;
@@ -25,7 +25,7 @@ export function handleAttack(command: IInstruction<IAttack>): void {
   if (currentGame) {
     const whoseTurnIndex = currentGame.whoseTurnIndex;
     if (whoseTurnIndex === indexPlayer) {
-      const status = detectMissOrKill(currentGame, attackedBoardIndex, coordinates, indexPlayer);
+      const status = detectMissOrKill(currentGame, attackedBoardIndex, indexPlayer, coordinates);
       const turn = generateTurn(currentGame, indexPlayer, status);
       const killedShip = currentGame.roomUsers[attackedBoardIndex].killedShips?.pop();
 
@@ -92,9 +92,12 @@ export function generateTurn(currentGame: IGame, index: number, status: string):
       } else {
         whoseTurnIndex = 0;
       }
-
-      currentGame.whoseTurnIndex = whoseTurnIndex;
+      break;
+    default:
+      whoseTurnIndex = index;
   }
+
+  currentGame.whoseTurnIndex = whoseTurnIndex;
   return whoseTurnIndex;
 }
 
@@ -140,36 +143,36 @@ function createTurnResponse(turn: number): string {
 function detectMissOrKill(
   currentGame: IGame,
   attackedBoardIndex: number,
-  coordinates: ShipPosition,
   indexPlayer: number,
-) {
+  coordinates: ShipPosition,
+): string {
   let status = 'miss';
   const shipCoords = currentGame.roomUsers[attackedBoardIndex].shipsCoords;
   const woundedCoords = currentGame.roomUsers[attackedBoardIndex].woundedCoords;
-  console.log(shipCoords);
+
   let foundCoords;
   let shipIndex;
 
   if (shipCoords) {
     for (let i = 0; i < shipCoords?.length; i++) {
       foundCoords = shipCoords[i].find((coords) => coords.x === coordinates.x && coords.y === coordinates.y);
-
       if (foundCoords) {
         shipIndex = i;
         break;
       }
     }
+
     if (foundCoords && shipIndex !== undefined && woundedCoords) {
       status = 'shot';
       const foundCoordsIndex = shipCoords[shipIndex].indexOf(foundCoords);
       const wounded = shipCoords[shipIndex].splice(foundCoordsIndex, 1);
       woundedCoords[shipIndex].push(wounded[0]);
-      console.log(woundedCoords);
 
       if (shipCoords[shipIndex].length === 0) {
         status = 'killed';
         const killedShip = woundedCoords[shipIndex];
         currentGame.roomUsers[attackedBoardIndex].killedShips?.push(killedShip);
+
         console.log(`INFO: Ship was killed\n`);
         handleWinners(currentGame, attackedBoardIndex, indexPlayer);
       } else {
@@ -183,7 +186,7 @@ function detectMissOrKill(
           );
           if (doubleShotCoords) {
             status = 'double-shot';
-            console.log(`INFO: This is double-shot\n`);
+            console.log(`INFO: This is double-shot, try again\n`);
             break;
           } else {
             status = 'miss';
@@ -246,7 +249,7 @@ function handleWinners(currentGame: IGame, attackedBoardIndex: number, indexPlay
     if (isWinner) {
       const winnerUser = currentGame.roomUsers[indexPlayer];
       addWinner(winnerUser);
-      console.log(`INFO: Enemy's ships were killed. User ${winnerUser.name} is a winner!`);
+      console.log(`All opponent's ships were killed. User ${winnerUser.name} is a winner!`);
     }
   }
 }

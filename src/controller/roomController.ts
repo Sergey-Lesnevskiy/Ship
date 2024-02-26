@@ -21,9 +21,9 @@ export function addUserToRoom(ws: WebSocket, command: IInstruction<UserAddToRoom
       playRooms[indexRoom - 1].roomUsers.push(secondPlayer);
 
       playRooms[indexRoom - 1].roomUsers.forEach((player, index) => {
-        const playerWS = userList[player.index - 1].ws;
-        if (playerWS) {
-          sendCreateGameResponse(playerWS, index);
+        const playerWs = userList[player.index - 1].ws;
+        if (playerWs) {
+          sendCreateGameResponse(playerWs, index);
         }
       });
 
@@ -35,7 +35,9 @@ export function addUserToRoom(ws: WebSocket, command: IInstruction<UserAddToRoom
       };
       gamesList.push(game);
       gameStats.count += 1;
+
       console.log(`INFO: User ${user.name} was added to the room. Game was created\n`);
+
       deleteRoomsCreatedByUser(user);
       sendUpdateRoomStateToAll();
     }
@@ -59,7 +61,7 @@ export function createNewRoom(ws: WebSocket): void {
   if (user && isFirstUserRoom(user)) {
     const firstPlayer = {
       ws: user.ws,
-      name: user?.name,
+      name: user.name,
       index: userList.indexOf(user) + 1,
     };
     const newRoom = {
@@ -90,6 +92,7 @@ export function createGameRes(index: number): string {
     },
     id: 0,
   };
+
   return stringifyResponse(gameResponse);
 }
 export function createRoomResponse(): string {
@@ -130,7 +133,6 @@ function isFirstUserRoom(user: IRegUser): boolean {
 
 function isRoomCreator(ws: WebSocket, indexRoom: number): boolean {
   const currentRoom = playRooms[indexRoom - 1];
-  console.log(currentRoom);
   if (currentRoom) {
     const roomCreator = currentRoom.roomUsers?.find((user) => user.ws === ws);
     return roomCreator ? true : false;

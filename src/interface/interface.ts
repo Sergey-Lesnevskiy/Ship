@@ -35,9 +35,9 @@ export interface UserAddToRoom {
   indexRoom: number;
 }
 export interface IGame {
+  gameId: number;
   roomUsers: Array<IRoomUser>;
   whoseTurnIndex?: number;
-  gameId: number;
 }
 export interface IAddShips {
   gameId: number;

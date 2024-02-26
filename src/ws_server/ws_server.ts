@@ -4,7 +4,7 @@ import { router } from '../router/router.js';
 import { parsedCommand } from '../utils/utils.js';
 import { userList } from '../data/userData.js';
 import { deleteRoomsCreatedByUser, sendUpdateRoomStateToAll } from '../controller/roomController.js';
-import { handleTechnicalDefeat } from '../controller/gameCotroller.js';
+import { handleTechnicalDefeat } from '../controller/gameController.js';
 
 const WS_PORT = 3000;
 
@@ -15,7 +15,9 @@ export const WSServer: WebSocket.Server<typeof WebSocket, typeof IncomingMessage
 export function onConnect(ws: WebSocket, req: IncomingMessage): void {
   ws.on('error', console.error);
 
-  console.log(`WS works on ${WS_PORT}`);
+  console.log(
+    `Client connected. Remote Address is ${req.socket.remoteAddress}. Remote Port is ${req.socket.remotePort}\n`,
+  );
 
   ws.on('message', function message(command) {
     console.log(`COMMAND: ${JSON.stringify(parsedCommand(command))}`);
