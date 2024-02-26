@@ -7,7 +7,7 @@ import { sendUpdateWinnersResponse, sendUpdateWinnersToAll } from './controller.
 
 export function handleAttack(command: IInstruction<IAttack>): void {
   const { gameId, indexPlayer } = command.data;
-  const currentGame = gamesList[gameId];
+  const currentGame = gamesList.find((game) => game.gameId === gameId);
   const attackedBoardIndex = indexPlayer ? 0 : 1;
 
   let coordinates: ShipPosition;
@@ -22,32 +22,38 @@ export function handleAttack(command: IInstruction<IAttack>): void {
     };
   }
 
-  const whoseTurnIndex = currentGame.whoseTurnIndex;
-  if (whoseTurnIndex === indexPlayer) {
-    const status = detectMissOrKill(currentGame, attackedBoardIndex, coordinates, indexPlayer);
-    const turn = generateTurn(currentGame, indexPlayer, status);
-    const killedShip = currentGame.roomUsers[attackedBoardIndex].killedShips?.pop();
+  if (currentGame) {
+    const whoseTurnIndex = currentGame.whoseTurnIndex;
+    if (whoseTurnIndex === indexPlayer) {
+      const status = detectMissOrKill(currentGame, attackedBoardIndex, coordinates, indexPlayer);
+      const turn = generateTurn(currentGame, indexPlayer, status);
+      const killedShip = currentGame.roomUsers[attackedBoardIndex].killedShips?.pop();
 
-    currentGame.roomUsers.forEach((player) => {
-      const playerWs = userList[player.index - 1].ws;
+      currentGame.roomUsers.forEach((player) => {
+        const playerWs = userList[player.index - 1].ws;
 
-      if (playerWs) {
-        if (status === 'double-shot') {
-          return;
-        }
-        sendTurnResponse(playerWs, turn);
-        if (status === 'killed' && killedShip) {
-          sendKillShipResponse(playerWs, killedShip, indexPlayer);
-          sendSurroundingCellsResponse(playerWs, killedShip, indexPlayer);
-          const isGameFinished = currentGame.roomUsers[indexPlayer].isWinner;
-          if (isGameFinished) {
-            sendFinishResponse(playerWs, indexPlayer);
-            sendUpdateWinnersResponse(playerWs, winnersList);
+        if (playerWs) {
+          if (status === 'double-shot') {
+            return;
           }
+          sendAttackResponse(playerWs, coordinates, indexPlayer, status);
+          if (status === 'killed' && killedShip) {
+            sendKillShipResponse(playerWs, killedShip, indexPlayer);
+            sendSurroundingCellsResponse(playerWs, killedShip, indexPlayer);
+
+            const isGameFinished = currentGame.roomUsers[indexPlayer].isWinner;
+            if (isGameFinished) {
+              sendFinishResponse(playerWs, indexPlayer);
+              removeFinishedGame(currentGame);
+              sendUpdateWinnersToAll();
+            }
+          }
+          sendTurnResponse(playerWs, turn);
         }
-        sendAttackResponse(playerWs, coordinates, indexPlayer, status);
-      }
-    });
+      });
+    } else {
+      console.log(`INFO: This user cannot attack now, as it's not his turn\n`);
+    }
   }
 }
 function createFinishResponse(userIndex: number): string {
@@ -157,7 +163,6 @@ function detectMissOrKill(
       status = 'shot';
       const foundCoordsIndex = shipCoords[shipIndex].indexOf(foundCoords);
       const wounded = shipCoords[shipIndex].splice(foundCoordsIndex, 1);
-      console.log('wounded', wounded);
       woundedCoords[shipIndex].push(wounded[0]);
       console.log(woundedCoords);
 
@@ -165,7 +170,10 @@ function detectMissOrKill(
         status = 'killed';
         const killedShip = woundedCoords[shipIndex];
         currentGame.roomUsers[attackedBoardIndex].killedShips?.push(killedShip);
+        console.log(`INFO: Ship was killed\n`);
         handleWinners(currentGame, attackedBoardIndex, indexPlayer);
+      } else {
+        console.log(`INFO: Ship was shot\n`);
       }
     } else {
       if (woundedCoords) {
@@ -175,11 +183,13 @@ function detectMissOrKill(
           );
           if (doubleShotCoords) {
             status = 'double-shot';
+            console.log(`INFO: This is double-shot\n`);
             break;
           } else {
             status = 'miss';
           }
         }
+        console.log(`INFO: This cell is empty\n`);
       }
     }
   }
@@ -213,9 +223,17 @@ export function handleTechnicalDefeat(user: IRegUser): void {
         console.log('Game finished with technical defeat');
         addWinner(winnerUser);
         sendFinishResponse(playerWs, winnerPlayerIndex);
+        removeFinishedGame(foundGame);
         sendUpdateWinnersToAll();
       }
     }
+  }
+}
+
+function removeFinishedGame(currentGame: IGame): void {
+  const currentGameIndex = gamesList.indexOf(currentGame);
+  if (currentGameIndex !== -1) {
+    gamesList.splice(currentGameIndex, 1);
   }
 }
 
@@ -228,6 +246,7 @@ function handleWinners(currentGame: IGame, attackedBoardIndex: number, indexPlay
     if (isWinner) {
       const winnerUser = currentGame.roomUsers[indexPlayer];
       addWinner(winnerUser);
+      console.log(`INFO: Enemy's ships were killed. User ${winnerUser.name} is a winner!`);
     }
   }
 }

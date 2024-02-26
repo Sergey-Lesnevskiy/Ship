@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { gamesList, playRooms } from '../data/roomData.js';
+import { gameStats, gamesList, playRooms } from '../data/roomData.js';
 import { stringifyResponse } from '../utils/utils.js';
 import { userList } from '../data/userData.js';
 import { websocketList } from '../data/roomData.js';
@@ -30,12 +30,19 @@ export function addUserToRoom(ws: WebSocket, command: IInstruction<UserAddToRoom
       const deletedRoom = playRooms.splice(indexRoom - 1, 1);
 
       const game: IGame = {
+        gameId: gameStats.count,
         roomUsers: deletedRoom[0].roomUsers,
       };
       gamesList.push(game);
+      gameStats.count += 1;
+      console.log(`INFO: User ${user.name} was added to the room. Game was created\n`);
       deleteRoomsCreatedByUser(user);
       sendUpdateRoomStateToAll();
     }
+  } else {
+    console.log(
+      `INFO: This user is the creator of the room. The game will start when the second user joins this room.\n`,
+    );
   }
 }
 export function deleteRoomsCreatedByUser(user: IRegUser): void {
@@ -60,9 +67,11 @@ export function createNewRoom(ws: WebSocket): void {
       roomUsers: [firstPlayer],
     };
     playRooms.push(newRoom);
-    console.log(playRooms[playRooms.length - 1]);
+    console.log(`INFO: New room was created by ${user.name}\n`);
 
     sendUpdateRoomStateToAll();
+  } else {
+    console.log('INFO: This user already has another room.\n');
   }
 }
 
@@ -72,19 +81,11 @@ export function sendUpdateRoomStateToAll(): void {
   });
 }
 
-// export function isRoomCreator(ws: WebSocket, indexRoom: number): boolean {
-//   const currentRoom = playRooms[indexRoom - 1];
-//   const roomCreator = currentRoom.roomUsers.find((user) => user.ws === ws);
-//   // console.log('roomCreator', roomCreator);
-
-//   return roomCreator ? true : false;
-// }
-
 export function createGameRes(index: number): string {
   const gameResponse = {
     type: 'create_game',
     data: {
-      idGame: gamesList.length,
+      idGame: gameStats.count,
       idPlayer: index,
     },
     id: 0,

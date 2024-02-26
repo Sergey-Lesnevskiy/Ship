@@ -10,24 +10,30 @@ export function addShipsToGameBoard(ws: WebSocket, command: IInstruction<IAddShi
 
   const userShipsCoordinatesList = ships.map((ship) => convertShipToCoordinates(ship));
   const shipsAmount = userShipsCoordinatesList.length;
-  const currentGame = gamesList[gameId];
-  const currentPlayer = currentGame.roomUsers.find((user) => user.ws === ws);
-  if (currentPlayer) {
-    currentPlayer.indexPlayer = indexPlayer;
-    currentPlayer.shipsList = ships;
-    currentPlayer.shipsCoords = userShipsCoordinatesList;
-    currentPlayer.woundedCoords = Array.from({ length: shipsAmount }, () => []);
-    currentPlayer.killedShips = [];
-  }
-  if (bothPlayersReady(currentGame)) {
-    const turn = generateTurn(currentGame, 0, 'start');
-    currentGame.roomUsers.forEach((player, index) => {
-      const playerWs = userList[player.index - 1].ws;
-      if (playerWs) {
-        sendCreateGameResponse(playerWs, currentGame, index);
-        sendTurnResponse(playerWs, turn);
-      }
-    });
+  const currentGame = gamesList.find((game) => game.gameId === gameId);
+  if (currentGame) {
+    const currentPlayer = currentGame.roomUsers.find((user) => user.ws === ws);
+
+    if (currentPlayer) {
+      currentPlayer.indexPlayer = indexPlayer;
+      currentPlayer.shipsList = ships;
+      currentPlayer.shipsCoords = userShipsCoordinatesList;
+      currentPlayer.woundedCoords = Array.from({ length: shipsAmount }, () => []);
+      currentPlayer.killedShips = [];
+    }
+    if (bothPlayersReady(currentGame)) {
+      const turn = generateTurn(currentGame, 0, 'start');
+      currentGame.roomUsers.forEach((player, index) => {
+        const playerWs = userList[player.index - 1].ws;
+        if (playerWs) {
+          sendCreateGameResponse(playerWs, currentGame, index);
+          sendTurnResponse(playerWs, turn);
+        }
+      });
+      console.log(`INFO: Both players have ships.\n`);
+    } else {
+      console.log(`INFO: One player has ships. Waiting for another player\n`);
+    }
   }
 }
 function bothPlayersReady(currentGame: IGame): boolean {

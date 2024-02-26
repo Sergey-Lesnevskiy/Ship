@@ -8,3 +8,7 @@ export const websocketList = new Set<WebSocket>();
 export const gamesList: Array<IGame> = [];
 
 export const winnersList: Array<IWinner> = [];
+
+export const gameStats = {
+  count: 0,
+};

@@ -1,12 +1,7 @@
 import { WebSocket } from 'ws';
 import { IAddShips, IAttack, IInstruction, IRegUser, UserAddToRoom } from '../interface/interface.js';
 import { sendRegResponse, sendUpdateWinnersToAll } from '../controller/controller.js';
-import {
-  addUserToRoom,
-  createNewRoom,
-  sendUpdateRoomState,
-  sendUpdateRoomStateToAll,
-} from '../controller/roomController.js';
+import { addUserToRoom, createNewRoom, sendUpdateRoomStateToAll } from '../controller/roomController.js';
 import { addShipsToGameBoard } from '../controller/shipController.js';
 import { handleAttack } from '../controller/gameCotroller.js';
 
@@ -28,33 +23,15 @@ export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
       addUserToRoom(ws, data as IInstruction<UserAddToRoom>);
       console.log('add user to room');
       break;
-    case 'create_game':
-      console.log('create game for players');
-      break;
     case 'attack':
-      handleAttack(data as IInstruction<IAttack>);
-      console.log('attack');
-      break;
     case 'randomAttack':
       handleAttack(data as IInstruction<IAttack>);
       console.log('random attack');
-      break;
-    case 'update_room':
-      console.log('update room state for one player');
       break;
     case 'add_ships':
       addShipsToGameBoard(ws, data as IInstruction<IAddShips>);
       console.log('add ships');
       break;
-    // case 'update_winners':
-    //   console.log('update winners');
-    //   break;
-    case 'turn':
-      console.log("Info about player's turn");
-      break;
-    // case 'finish':
-    //   console.log('finish game');
-    //   break;
     default:
       console.log('Invalid input');
   }

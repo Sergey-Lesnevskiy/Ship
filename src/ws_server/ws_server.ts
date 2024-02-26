@@ -1,5 +1,4 @@
 import { IncomingMessage } from 'http';
-import { httpServer } from '../http_server/index.js';
 import WebSocket, { WebSocketServer } from 'ws';
 import { router } from '../router/router.js';
 import { parsedCommand } from '../utils/utils.js';
@@ -19,8 +18,10 @@ export function onConnect(ws: WebSocket, req: IncomingMessage): void {
   console.log(`WS works on ${WS_PORT}`);
 
   ws.on('message', function message(command) {
+    console.log(`COMMAND: ${JSON.stringify(parsedCommand(command))}`);
     router(ws, parsedCommand(command));
   });
+
   ws.on('close', function close() {
     const user = userList.find((user) => user.ws === ws);
     if (user) {
@@ -35,4 +36,13 @@ export function onConnect(ws: WebSocket, req: IncomingMessage): void {
 }
 export function onClose(): void {
   console.log('WebSocket Server closed');
+}
+
+export function onListen(): void {
+  const wsAddress = WSServer.address();
+  if (typeof wsAddress !== 'string') {
+    console.log(`WebSocket server works on ${wsAddress.port} port. Address is ${wsAddress.address}\n`);
+  } else {
+    console.log(`WebSocket server works on ${WS_PORT} port\n`);
+  }
 }

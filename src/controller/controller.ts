@@ -32,9 +32,14 @@ export function addUser(ws: WebSocket, userData: IRegUser): void {
   if (isNewUser(userData.name)) {
     userList.push({ ...userData, ws });
     websocketList.add(ws);
-    console.log(`user ${userData.name} added to DB`);
+    console.log(`INFO: User ${userData.name} added to DB\n`);
   } else {
-    updateExistingUser(ws, userData);
+    if (isPasswordValid(userData)) {
+      updateExistingUser(ws, userData);
+      console.log(`INFO: User ${userData.name} logged in again\n`);
+    } else {
+      console.log(`INFO: User ${userData.name} input incorrect password\n`);
+    }
   }
 }
 
