@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import { IAddShips, IInstruction, IRegUser, UserAddToRoom } from '../interface/interface.js';
+import { IAddShips, IAttack, IInstruction, IRegUser, UserAddToRoom } from '../interface/interface.js';
 import { sendRegResponse } from '../controller/controller.js';
 import {
   addUserToRoom,
@@ -8,6 +8,7 @@ import {
   sendUpdateRoomStateToAll,
 } from '../controller/roomController.js';
 import { addShipsToGameBoard } from '../controller/shipController.js';
+import { handleAttack } from '../controller/gameCotroller.js';
 
 export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
   console.log('Data in router', data);
@@ -30,9 +31,11 @@ export const router = <T>(ws: WebSocket, data: IInstruction<T>) => {
       console.log('create game for players');
       break;
     case 'attack':
+      handleAttack(data as IInstruction<IAttack>);
       console.log('attack');
       break;
     case 'randomAttack':
+      handleAttack(data as IInstruction<IAttack>);
       console.log('random attack');
       break;
     case 'update_room':

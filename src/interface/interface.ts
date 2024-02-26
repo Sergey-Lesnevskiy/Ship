@@ -26,6 +26,9 @@ interface IRoomUser {
   shipsList?: Array<IShip>;
   indexPlayer?: number;
   shipsCoords?: Array<ShipPosition[]>;
+  killedShips?: Array<ShipPosition[]>;
+  woundedCoords?: Array<ShipPosition[]>;
+  isWinner?: boolean;
 }
 
 export interface UserAddToRoom {
@@ -55,4 +58,14 @@ export interface ShipPosition {
 }
 export interface IShipLength {
   [key: string]: number;
+}
+export interface IAttack {
+  gameId: number;
+  x?: number;
+  y?: number;
+  indexPlayer: number;
+}
+export interface IWinner {
+  name: string;
+  wins: number;
 }

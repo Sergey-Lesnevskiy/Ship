@@ -3,26 +3,29 @@ import { IAddShips, IInstruction, IGame, IShip, IShipLength, ShipPosition } from
 import { gamesList } from '../data/roomData.js';
 import { stringifyResponse } from '../utils/utils.js';
 import { userList } from '../data/userData.js';
-import { sendTurnResponse } from './gameCotroller.js';
+import { generateTurn, sendTurnResponse } from './gameCotroller.js';
 
 export function addShipsToGameBoard(ws: WebSocket, command: IInstruction<IAddShips>) {
   const { gameId, ships, indexPlayer } = command.data;
 
   const userShipsCoordinatesList = ships.map((ship) => convertShipToCoordinates(ship));
-  console.log(userShipsCoordinatesList);
+  const shipsAmount = userShipsCoordinatesList.length;
   const currentGame = gamesList[gameId];
   const currentPlayer = currentGame.roomUsers.find((user) => user.ws === ws);
   if (currentPlayer) {
     currentPlayer.indexPlayer = indexPlayer;
     currentPlayer.shipsList = ships;
     currentPlayer.shipsCoords = userShipsCoordinatesList;
+    currentPlayer.woundedCoords = Array.from({ length: shipsAmount }, () => []);
+    currentPlayer.killedShips = [];
   }
   if (bothPlayersReady(currentGame)) {
+    const turn = generateTurn(currentGame, 0, 'start');
     currentGame.roomUsers.forEach((player, index) => {
       const playerWs = userList[player.index - 1].ws;
       if (playerWs) {
         sendCreateGameResponse(playerWs, currentGame, index);
-        sendTurnResponse(playerWs, currentGame, index, 'start');
+        sendTurnResponse(playerWs, turn);
       }
     });
   }
